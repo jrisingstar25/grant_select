@@ -1,0 +1,84 @@
+.pms-group-holder {
+    max-width: 1000px;
+}
+
+.pms-group-members-list h3 {
+    margin-bottom: 0;
+}
+
+.pms-group-members-list .tablenav.top {
+    margin-top: 0;
+}
+
+.wp-list-table.group-info tfoot, .wp-list-table.group-members tfoot {
+    display: none;
+}
+
+.wp-list-table.group-info td, .wp-list-table.group-info th,
+.wp-list-table.group-members th {
+    padding: 10px 15px;
+    line-height: 28px;
+}
+
+.wp-list-table.group-members td {
+    padding-left: 15px;
+    line-height: 28px;
+}
+
+.pms-group-info .tablenav.top {
+    display: none;
+}
+
+.wp-list-table.group-info td.column-actions .row-actions {
+    position: static;
+}
+
+.wp-list-table td.column-actions .row-actions #save {
+    display: none;
+}
+
+.wp-list-table.group-info .column-members {
+    width: 9%;
+}
+
+.wp-list-table.group-info .column-seats {
+    width: 7%;
+}
+
+.wp-list-table.group-info .column-next_payment + .column-actions {
+    width: 12%;
+}
+
+.wp-list-table.group-info .column-group_name {
+    width: 24%;
+}
+
+.wp-list-table.group-info td input {
+    display: none;
+}
+
+.wp-list-table.group-info .column-seats input {
+    max-width: 60px;
+}
+
+.pms-group-wrap .pms-admin-notice {
+    display: none;
+}
+
+.pms-group-wrap .pms-admin-notice.updated,
+.pms-group-wrap .pms-admin-notice.error {
+    display: block;
+}
+
+.pms-group-info .pms-group-description textarea {
+    display: none;
+    margin-bottom: 16px;
+}
+
+.wp-list-table.group-members .members-list-row-actions a:first-child {
+    margin-right: 8px;
+}
+
+.wp-list-table.group-members .members-list-row-actions form {
+    display: inline-block;
+}

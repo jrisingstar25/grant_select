@@ -1,0 +1,16 @@
+.search-section{text-align: right;}
+.text-center{text-align: center;}
+.search-section #search_val{width: calc(100% - 130px);}
+input#create_btn{padding: 14px 30px; margin-left: 7px;}
+
+.confirm-section{
+    margin: 0px 30px 30px 30px;
+    padding: 32px 0px 8px 0px;
+    border-top: 1px solid #ccc;
+    text-align: center;
+}
+.confirm-section .button{width:120px;background:#072362;}
+.confirm-section .button.remove_cancel{background:#de3c22;}
+.gform_wrapper.gf_browser_chrome .ginput_container_select select.gfield_select{
+    padding: .65em 1.4em .65em .5em;
+}

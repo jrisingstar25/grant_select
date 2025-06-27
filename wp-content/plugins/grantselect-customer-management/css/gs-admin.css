@@ -1,0 +1,9 @@
+#adminmenu > li{display: none;}
+#wpadminbar{display: none;}
+
+.wp-admin #wpadminbar{display: block;}
+.wp-admin #wpadminbar #wp-admin-bar-comments,
+.wp-admin #wpadminbar #wp-admin-bar-new-content,
+.wp-admin #wpadminbar #wp-admin-bar-updraft_admin_node{
+    display: none;
+}

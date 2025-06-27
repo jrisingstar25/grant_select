@@ -1,0 +1,118 @@
+/*----------------------User tables-------------------------------*/
+.gs-table-content th#header-subscriber,
+.gs-table-content th#header-status,
+.gs-table-content th#header-expiration {
+    cursor:pointer
+}
+.gs-table-content th#header-subscriber:hover,
+.gs-table-content th#header-status:hover,
+.gs-table-content th#header-expiration:hover {
+    text-decoration:underline
+}
+.page_link_btn {
+    cursor:pointer
+}
+
+/*----------------------Usage/Search Section Style----------------*/
+.search-section{text-align: right;}
+.search-section input.datepicker{width: 16%;}
+.search-section select{width: 20%;display:inline;}
+.entry-content #wppb-epaa-admin-review-links,
+.entry-content #select_user_to_edit_form{display: none;}
+
+.sponsor-div, .subject-heading{position: relative; margin-bottom: 2rem;}
+.sponsor-detail {display: none;}
+.sponsor-detail .sponsor-item{display:flex;flex-direction: row;}
+.sponsor-detail .sponsor-item label{width: 150px;text-align: right; display: block; padding: 4px;float:left;}
+.sponsor-detail .sponsor-item div{padding: 4px 4px 4px 16px; font-weight: 600;}
+.sponsor-detail .sponsor-item.msg{padding-left: 170px;}
+
+.entry-content ol, .entry-content .subject-heading-detail ul{margin: 0px;}
+
+body .gform_wrapper.subject-heading-detail ul.gfield_checkbox li label::before,
+body .gform_wrapper.subject-heading-detail ul.gfield_checkbox li label::after
+{display:none;}
+body .gform_wrapper.subject-heading-detail ul.gfield_checkbox li label{
+    padding-left: 4px;
+}
+
+body .gform_wrapper ul li.gfield.scroll-field div.gsave_container{
+    height: 250px;
+    border: 1px solid #ddd;
+    overflow-y: auto;
+    padding: 4px 10px 10px 10px !important;
+    border-radius: 6px;
+    display: inline-block;
+    box-shadow: 0 18px 26px -20px rgb(0 0 0 / 25%);
+    margin-top: 1px;
+    width: 100%;
+    position: relative;
+}
+.edit-box .button-group{display:flex;justify-content: center; }
+.edit-box .button-group input{   margin: 8px;}
+body .sponsor-div .ui-widget.ui-widget-content.ui-autocomplete{border: 1px solid #ccc;}
+
+select#nl_category {
+    padding: 7px 1.4em 8px .5em;
+    width: 140px;
+    border-radius: 6px;
+    margin-left: 5px;
+}
+.mass-delete-options .remove-sel {
+    margin-bottom: 6px;
+    font-size: 16px;
+    padding: 9px 18px;
+    background-color: #e5eaf6 !important;
+    letter-spacing: 0.5px;
+    color: #586f9e !important;
+    transition: all 0.2s ease-in-out;
+}
+.mass-delete-options input[type="button"].remove-sel:hover,
+.mass-delete-options input[type="button"].remove-sel:focus,
+.mass-delete-options input[type="button"].remove-sel:active{
+    background-color: #586f9e !important;
+    color: #fff !important;
+}
+.subject-heading-detail > ul > li{
+    list-style-type: none;
+}
+.newsletter-page #menu-item-652,
+.newsletter-page #menu-item-653,
+.newsletter-page #menu-item-654{
+    display: none;
+}
+.newsletter-page #menu-item-1575{
+    margin-top: 0px;
+}
+.gs-expiring-subscriptions td{padding: 12px 20px;}
+.gs-expiring-subscriptions th{background-color: #e5eaf6;}
+.gs-expiring-subscriptions tr:nth-of-type(odd){background-color: #f1f4fb;}
+.gs-expiring-subscriptions .cell-1{width: 30%;}
+.gs-expiring-subscriptions .cell-2{width: 30%;}
+.gs-expiring-subscriptions .cell-3{width: 20%;}
+.gs-expiring-subscriptions .cell-4{width: 20%;}
+.usage-section{position:relative;}
+.usage-report{display: flex;flex-direction: row;}
+.usage-dashboard{
+    font-size: 14px;
+    width: 25%;
+    text-align: left;
+    border-left: 1px solid #a2aab6;
+    padding-left: 20px;
+    margin-top: 20px;
+}
+.entry-content .usage-dashboard p{margin: 0;}
+.usage-dashboard .total-visits,
+.usage-dashboard .searches-performed,
+.usage-dashboard .email-alerts,
+.usage-dashboard .grants-viewed{
+    font-size: 56px;
+    line-height: 56px;
+}
+#monthly_vistor_cnt_chart_div path:nth-child(2){display:none !important;}
+.ui-dialog.popup-small .ui-dialog-buttonpane{margin-top: 0px;}
+.pms-subscription-update{position:relative;}
+.wppb-success.hidden{display: none;}
+.wppb-form-field .wppb-checkboxes label.chkallseglbl{
+    padding-right: 20px;
+}
