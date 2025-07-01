@@ -1066,6 +1066,7 @@ Class Grantselect_Customer_Management {
         $this->table_subscriptions      = $wpdb->prefix . "pms_member_subscriptions";
         $this->table_owner_statistics   = $wpdb->prefix . "gs_owner_statistics";
         $this->table_subscriber_logs    = $wpdb->prefix . 'gs_subscriber_logs';
+        $this->table_library_cards      = $wpdb->prefix . "gs_library_cards";
         $this->per_pages = [10, 20, 50, 100];
         $this->init();
     }
@@ -1713,6 +1714,29 @@ EOF;
                         }
                         $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
                         $_SESSION['referer_url'] = $referer_url;
+                    } else {
+                        // if card session exists
+                        if (isset($_SESSION['library_user_id']) && isset($_SESSION['library_card_num'])) {
+                            // if expired_at is invalid
+                            $library_user_id = $_SESSION['library_user_id'];
+                            $library_card_num = $_SESSION['library_card_num'];
+                            $expired_at = $_SESSION['library_card_expired_at'];
+
+                            $query = "select * from {$this->table_library_cards} where user_id={$library_user_id} AND card_number={$library_card_num} AND expired_at >= {$expired_at}";
+                            $card_rows = $wpdb->get_results($query);
+                            if (count($card_rows) == 0) {
+                                // unset card sessions
+                                unset($_SESSION['library_card_num']);
+                                unset($_SESSION['library_user_id']);
+                                unset($_SESSION['library_card_expired_at']);
+
+                                // redirect to log-evergreen url
+                                wp_redirect(home_url("/login-evergreen/{$library_user_id}"));
+                                exit;
+                            }
+
+                            $user_id = $library_user_id;
+                        }
                     }
                 }
                 if ($user_id == 0){
@@ -1781,6 +1805,7 @@ EOF;
     
 
     function gs_content_restriction_shortcode( $atts, $content = null ) {
+        global $wpdb;
 
         $args = shortcode_atts(
             array(
@@ -1840,6 +1865,18 @@ EOF;
                     $url_row = $wpdb->get_row($wpdb->prepare("select user_id from {$wpdb->prefix}usermeta where meta_key LIKE 'referer-urls%' AND meta_value!='' AND %s LIKE CONCAT(meta_value, '%')", array($referer_url)));
                     if ($url_row){
                         $user_id = $url_row->user_id;
+                    } else {
+                        if (isset($_SESSION['library_user_id']) && isset($_SESSION['library_card_num'])) {
+                            $library_user_id = $_SESSION['library_user_id'];
+                            $library_card_num = $_SESSION['library_card_num'];
+                            $expired_at = $_SESSION['library_card_expired_at'];
+
+                            $query = "select * from {$this->table_library_cards} where user_id={$library_user_id} AND card_number={$library_card_num} AND expired_at >= {$expired_at}";
+                            $card_rows = $wpdb->get_results($query);
+                            if (count($card_rows) > 0) {
+                                $user_id = $library_user_id;
+                            }
+                        }
                     }
                 }
                 if ($user_id != 0){

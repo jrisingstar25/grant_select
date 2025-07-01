@@ -53,7 +53,11 @@ Class Grantselect_Library_Evergreen_Auth {
 
     public function __construct() {
         global $wpdb;
-        $this->table_library_cards   = $wpdb->prefix . "gs_library_cards";
+        $this->table_subscriptionmeta   = $wpdb->prefix . "pms_member_subscriptionmeta";
+        $this->table_subscriptions      = $wpdb->prefix . "pms_member_subscriptions";
+        $this->table_owner_statistics   = $wpdb->prefix . "gs_owner_statistics";
+        $this->table_subscriber_logs    = $wpdb->prefix . 'gs_subscriber_logs';
+        $this->table_library_cards      = $wpdb->prefix . "gs_library_cards";
         $this->init();
     }
 
@@ -148,6 +152,9 @@ Class Grantselect_Library_Evergreen_Auth {
                 $row
             );
 
+            // add the login library log
+            $this->add_library_login_log($user_id); 
+
             $_SESSION['library_card_num'] = $lib_card_number;
             $_SESSION['library_user_id'] = $user_id;
             $_SESSION['library_user_action'] = 'login';
@@ -158,7 +165,7 @@ Class Grantselect_Library_Evergreen_Auth {
         }
 
         ob_start();
-        if( file_exists( GS_LEA_PLUGIN_DIR_PATH . 'templates/gs_library_login_form.php' ) ){
+        if (file_exists(GS_LEA_PLUGIN_DIR_PATH . 'templates/gs_library_login_form.php')){
             include GS_LEA_PLUGIN_DIR_PATH . 'templates/gs_library_login_form.php';
         }
         $content = ob_get_contents();
@@ -201,6 +208,130 @@ Class Grantselect_Library_Evergreen_Auth {
         }
 
         return ['error' => 'You are using a bad card.'];
+    }
+
+    public function add_library_login_log($user_id) {
+        global $wpdb;
+        
+        $sid = 0;
+        $subscription_id = 0;
+        $subscription = null;
+        $member = pms_get_member($user_id);
+        if ($member->subscriptions) {
+            foreach($member->subscriptions as $subscript) {
+                $plan = pms_get_subscription_plan($subscript['subscription_plan_id']);
+                if ($plan->type != 'group')
+                    continue;
+                $subscription = pms_get_member_subscription($subscript['id']);
+                $subscription_id = $subscript['id'];
+                break;
+            }
+        }
+        if ($subscription_id != 0) {
+            if (!pms_gm_is_group_owner($subscription_id)) {
+                $owner_subscribermeta = $wpdb->get_row(
+                    $wpdb->prepare("SELECT meta_value FROM {$this->table_subscriptionmeta} WHERE meta_key='pms_group_subscription_owner' AND member_subscription_id=%s", array($subscription_id))
+                );
+                $owner_subscriber_id = $owner_subscribermeta->meta_value;
+            } else {
+                $owner_subscriber_id = $subscription_id;
+            }
+
+            $row = [];
+            $owner_subscriber = $wpdb->get_row(
+                $wpdb->prepare("SELECT user_id FROM {$this->table_subscriptions} WHERE id=%s", array($owner_subscriber_id))
+            );
+
+            $row['manager_id']      = $owner_subscriber->user_id;
+            $row['manager_name']    = pms_get_member_subscription_meta($owner_subscriber_id, 'pms_group_name', true);
+
+            $row['user_id']         = 0;
+            $row['user_name']       = "";
+
+            $row['ip']              = $this->get_the_user_ip();
+            $row['created_at']      = date("Y-m-d H:i:s");
+            $row['url']             = home_url($_SERVER['REQUEST_URI']);
+
+            $row['status']          = 0;
+            $row['sid']             = $sid;
+            $row['content']         = 'login';
+
+            $wpdb->insert(
+                $this->table_subscriber_logs,
+                $row
+            );
+
+            $owner_statistics = $wpdb->get_row(
+                $wpdb->prepare("SELECT id, count FROM {$this->table_owner_statistics} WHERE owner_sid=%d", array($owner_subscriber_id))
+            );
+            if ($owner_statistics == null) {
+                $wpdb->insert(
+                    $this->table_owner_statistics,
+                    array(
+                        'owner_sid' => $owner_subscriber_id,
+                        'owner_name'=> $row['manager_name'],
+                        'count'     => 1
+                    )
+                );
+            } else {
+                $wpdb->update(
+                    $this->table_owner_statistics,
+                    array(
+                        'owner_name'=> $row['manager_name'],
+                        'count'     => $owner_statistics->count + 1
+                    ),
+                    array(
+                        'owner_sid' => $owner_subscriber_id,
+                    )
+                );
+            }
+        } else {
+            if ($member->subscriptions) {
+                foreach ($member->subscriptions as $subscript) {
+                    $plan = pms_get_subscription_plan($subscript['subscription_plan_id']);
+                    $subscription = pms_get_member_subscription($subscript['id']);
+                    $subscription_id = $subscript['id'];
+                    break;
+                }
+            }
+
+            $owner_subscriber_id = $subscription_id;
+            $row = [];
+            $owner_subscriber = $wpdb->get_row(
+                $wpdb->prepare("SELECT user_id FROM {$this->table_subscriptions} WHERE id=%s", array($owner_subscriber_id))
+            );
+
+            $row['manager_id']      = $owner_subscriber->user_id;
+            $row['manager_name']    = pms_get_member_subscription_meta($owner_subscriber_id, 'pms_group_name', true);
+            $row['user_id']         = 0;
+            $row['user_name']       = "";
+
+            $row['ip']              = $this->get_the_user_ip();
+            $row['created_at']      = date("Y-m-d H:i:s");
+            $row['url']             = home_url($_SERVER['REQUEST_URI']);
+
+            $row['status']          = 0;
+            $row['sid']             = $sid;
+            $row['content']         = 'login';
+            
+            $wpdb->insert(
+                $this->table_subscriber_logs,
+                $row
+            );
+        }
+    }
+
+    public function get_the_user_ip() {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            //check ip from share internet
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            //to check ip is pass from proxy
+            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+        return $ip;
     }
 }
 
