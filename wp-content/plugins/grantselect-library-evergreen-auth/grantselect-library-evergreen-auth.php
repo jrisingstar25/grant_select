@@ -10,7 +10,9 @@ Author URI: https://www.magimpact.com/
 */
 define( 'GS_LEA_PLUGIN_DIR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'GS_LEA_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
-define( 'GS_LEA_EVERGREEN_PORT', 6001);
+define( 'GS_LEA_EVERGREEN_PORT', 6001 );
+define( 'GS_LEA_EXPIRY_HOUR', 1 );
+define( 'GS_LEA_INACTIVE_ACCOUNT_HOURS', 24 );
 
 register_activation_hook(__FILE__, 'gs_lea_install');
 register_deactivation_hook( __FILE__, 'gs_lea_uninstall');
@@ -48,20 +50,31 @@ function gs_lea_uninstall() {
     $wpdb->query($drop_table_query);
 }
 
-// function evergreen_login_rewrite_rule() {
-//     add_rewrite_rule(
-//         '^login-evergreen/([^/]*)/?',
-//         'index.php?pagename=login-evergreen&library_number=$matches[1]',
-//         'top'
-//     );
-// }
-// add_action('init', 'evergreen_login_rewrite_rule', 10, 0);
-
 function add_query_vars($vars) {
     $vars[] = 'library_number';
     return $vars;
 }
 add_filter('query_vars', 'add_query_vars');
+
+add_action('wp', function() {
+    if (!wp_next_scheduled('gs_lea_cron_hook')) {
+        wp_schedule_event(time(), 'daily', 'gs_lea_cron_hook');
+    }
+});
+
+add_action('gs_lea_cron_hook', 'remove_inactive_accounts');
+
+function remove_inactive_accounts() {
+    global $wpdb;
+
+    $last_used_timestamp = time() - GS_LEA_INACTIVE_ACCOUNT_HOURS * 86400;
+    $wpdb->query(
+        $wpdb->prepare(
+            "DELETE FROM {$wpdb->prefix}gs_library_cards WHERE expired_at < %s",
+            $last_used_timestamp
+        )
+    );
+}
 
 Class Grantselect_Library_Evergreen_Auth {
 
@@ -157,7 +170,7 @@ Class Grantselect_Library_Evergreen_Auth {
             $wpdb->delete($this->table_library_cards, $where, ['%d', '%s']);
 
             $row = $where;
-            $row['expired_at'] = time() + 86400;
+            $row['expired_at'] = time() + GS_LEA_EXPIRY_HOUR * 86400;
             $wpdb->insert(
                 $this->table_library_cards,
                 $row
