@@ -1715,27 +1715,26 @@ EOF;
                         $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
                         $_SESSION['referer_url'] = $referer_url;
                     } else {
-                        // if card session exists
-                        if (isset($_SESSION['library_user_id']) && isset($_SESSION['library_card_num'])) {
-                            // if expired_at is invalid
-                            $library_user_id = $_SESSION['library_user_id'];
-                            $library_card_num = $_SESSION['library_card_num'];
-                            $expired_at = $_SESSION['library_card_expired_at'];
+                        // check if card session exists
+                        if (isset($_SESSION['library_id']) && isset($_SESSION['card_number'])) {
+                            // check if library_id/card_number was expired
+                            $library_id     = $_SESSION['library_id'];
+                            $card_number    = $_SESSION['card_number'];
+                            $time_now       = time();
 
-                            $query = "select * from {$this->table_library_cards} where user_id={$library_user_id} AND card_number={$library_card_num} AND expired_at >= {$expired_at}";
+                            $query = "select * from {$this->table_library_cards} where library_id={$library_id} AND card_number={$card_number} AND expired_at > {$time_now}";
                             $card_rows = $wpdb->get_results($query);
                             if (count($card_rows) == 0) {
                                 // unset card sessions
-                                unset($_SESSION['library_card_num']);
-                                unset($_SESSION['library_user_id']);
-                                unset($_SESSION['library_card_expired_at']);
+                                unset($_SESSION['library_id']);
+                                unset($_SESSION['card_number']);
 
                                 // redirect to log-evergreen url
-                                wp_redirect(home_url("/login-evergreen/{$library_user_id}"));
+                                wp_redirect(home_url("/login-evergreen/{$library_id}"));
                                 exit;
                             }
 
-                            $user_id = $library_user_id;
+                            $user_id = $library_id;
                         }
                     }
                 }
@@ -1866,15 +1865,15 @@ EOF;
                     if ($url_row){
                         $user_id = $url_row->user_id;
                     } else {
-                        if (isset($_SESSION['library_user_id']) && isset($_SESSION['library_card_num'])) {
-                            $library_user_id = $_SESSION['library_user_id'];
-                            $library_card_num = $_SESSION['library_card_num'];
-                            $expired_at = $_SESSION['library_card_expired_at'];
+                        if (isset($_SESSION['library_id']) && isset($_SESSION['card_number'])) {
+                            $library_id     = $_SESSION['library_id'];
+                            $card_number    = $_SESSION['card_number'];
+                            $time_now       = time();
 
-                            $query = "select * from {$this->table_library_cards} where user_id={$library_user_id} AND card_number={$library_card_num} AND expired_at >= {$expired_at}";
+                            $query = "select * from {$this->table_library_cards} where library_id={$library_id} AND card_number={$card_number} AND expired_at > {$time_now}";
                             $card_rows = $wpdb->get_results($query);
                             if (count($card_rows) > 0) {
-                                $user_id = $library_user_id;
+                                $user_id = $library_id;
                             }
                         }
                     }
