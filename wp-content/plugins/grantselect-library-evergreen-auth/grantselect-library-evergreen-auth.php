@@ -21,7 +21,7 @@ function gs_lea_install() {
     // evergreen_login_rewrite_rule();
     add_rewrite_rule(
         '^login-evergreen/([^/]*)/?',
-        'index.php?pagename=login-evergreen&library_id=$matches[1]',
+        'index.php?pagename=login-evergreen&library_number=$matches[1]',
         'top'
     );
     flush_rewrite_rules();
@@ -31,7 +31,7 @@ function gs_lea_install() {
     // Create a gs_library_cards table if it doesn't exist
     $create_table_query = "CREATE TABLE IF NOT EXISTS `" . $wpdb->prefix . "gs_library_cards` (
                                                         `ID` bigint(20) NOT NULL AUTO_INCREMENT,
-                                                        `library_id` bigint(20) NOT NULL default 0,
+                                                        `library_number` bigint(20) NOT NULL default 0,
                                                         `card_number` varchar(30) DEFAULT '' NOT NULL,
                                                         `expired_at` bigint(20) NOT NULL,
                                                         PRIMARY KEY (`ID`)
@@ -51,14 +51,14 @@ function gs_lea_uninstall() {
 // function evergreen_login_rewrite_rule() {
 //     add_rewrite_rule(
 //         '^login-evergreen/([^/]*)/?',
-//         'index.php?pagename=login-evergreen&library_id=$matches[1]',
+//         'index.php?pagename=login-evergreen&library_number=$matches[1]',
 //         'top'
 //     );
 // }
 // add_action('init', 'evergreen_login_rewrite_rule', 10, 0);
 
 function add_query_vars($vars) {
-    $vars[] = 'library_id';
+    $vars[] = 'library_number';
     return $vars;
 }
 add_filter('query_vars', 'add_query_vars');
@@ -91,12 +91,12 @@ Class Grantselect_Library_Evergreen_Auth {
             exit;
         }
 
-        $library_id = get_query_var('library_id');
-        if (empty($library_id)) {
+        $library_number = get_query_var('library_number');
+        if (empty($library_number)) {
             return "<p>Please select the proper library ID.</p>";
         }
 
-        $member = pms_get_member($library_id);   // $library_id is equal to $user_id here
+        $member = pms_get_member($library_number);   // $library_number is equal to $user_id here
         $active_status = false;
         foreach ($member->subscriptions as $subscript) {
             if ($subscript['status'] == 'active') {
@@ -109,7 +109,7 @@ Class Grantselect_Library_Evergreen_Auth {
             return "<p>This library's subscription is not active.</p>";
         }
 
-        $query = "select meta_key, meta_value from {$wpdb->prefix}usermeta where user_id={$library_id} AND meta_key IN ('evergreen-sip2-domain', 'evergreen-sip2-username', 'evergreen-sip2-password')";
+        $query = "select meta_key, meta_value from {$wpdb->prefix}usermeta where user_id={$library_number} AND meta_key IN ('evergreen-sip2-domain', 'evergreen-sip2-username', 'evergreen-sip2-password')";
         $sip2_rows = $wpdb->get_results($query);
         if (count($sip2_rows) == 0) {
             return "<p>This library does not contain Evergreen information.</p>";
@@ -120,11 +120,11 @@ Class Grantselect_Library_Evergreen_Auth {
             if (
                 isset($_SESSION['card_number']) &&
                 ($_SESSION['card_number'] == $card_number) &&
-                isset($_SESSION['library_id']) &&
-                ($_SESSION['library_id'] == $library_id)
+                isset($_SESSION['library_number']) &&
+                ($_SESSION['library_number'] == $library_number)
             ) {
                 $time_now = time();
-                $query = "select * from {$this->table_library_cards} where library_id={$library_id} AND card_number={$card_number} AND expired_at > {$time_now}";
+                $query = "select * from {$this->table_library_cards} where library_number={$library_number} AND card_number={$card_number} AND expired_at > {$time_now}";
                 $card_rows = $wpdb->get_results($query);
                 if (count($card_rows) > 0) {
                     $_SESSION['library_user_action'] = 'access';
@@ -151,8 +151,8 @@ Class Grantselect_Library_Evergreen_Auth {
             }
 
             $where = [
-                'library_id'    => $library_id,
-                'card_number'   => $card_number
+                'library_number'    => $library_number,
+                'card_number'       => $card_number
             ];
             $wpdb->delete($this->table_library_cards, $where, ['%d', '%s']);
 
@@ -164,10 +164,10 @@ Class Grantselect_Library_Evergreen_Auth {
             );
 
             // add the login library log
-            $this->add_library_login_log($library_id);
+            $this->add_library_login_log($library_number);
 
-            $_SESSION['library_id']     = $library_id;
-            $_SESSION['card_number']    = $card_number;
+            $_SESSION['library_number']     = $library_number;
+            $_SESSION['card_number']        = $card_number;
 
             wp_redirect(home_url("/access/"));
             exit;
@@ -219,13 +219,13 @@ Class Grantselect_Library_Evergreen_Auth {
         return ['error' => 'You are using a bad card.'];
     }
 
-    public function add_library_login_log($library_id) {
+    public function add_library_login_log($library_number) {
         global $wpdb;
         
         $sid = 0;
         $subscription_id = 0;
         $subscription = null;
-        $member = pms_get_member($library_id);
+        $member = pms_get_member($library_number);
         if ($member->subscriptions) {
             foreach($member->subscriptions as $subscript) {
                 $plan = pms_get_subscription_plan($subscript['subscription_plan_id']);
