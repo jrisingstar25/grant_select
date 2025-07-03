@@ -90,6 +90,73 @@ Class Grantselect_Library_Evergreen_Auth {
 
     private function init() {
         add_shortcode("gs-evergreen-login", array($this, "gs_evergreen_login"));
+        add_filter( 'wppb_output_fields_filter', array($this, 'add_library_login_url'), 10, 1 );
+    }
+
+    public function add_library_login_url($output) {
+        global $wpdb;
+
+        $subscription_id = 0;
+        $active_status = false;
+        $user_id = get_current_user_id();
+        if ($_GET['edit_user']) {
+            $user_id = $_GET['edit_user'];
+        }
+        $member = pms_get_member($user_id);
+        if ($member->subscriptions != NULL) {
+            foreach ($member->subscriptions as $subscript) {
+                if ($subscript['status'] == 'active')
+                    $active_status = true;
+
+                $plan = pms_get_subscription_plan($subscript['subscription_plan_id']);
+                if ($plan->type != 'group')
+                    continue;
+
+                $subscription = pms_get_member_subscription($subscript['id']);
+                $subscription_id = $subscript['id'];
+                break;
+            }
+        }
+
+        $query = "select meta_key, meta_value from {$wpdb->prefix}usermeta where user_id={$user_id} AND meta_key LIKE 'evergreen-sip2%'";
+        $sip2_rows = $wpdb->get_results($query);
+
+        if (($subscription_id != 0) && $active_status && (count($sip2_rows) > 0)) {
+            if (pms_gm_is_group_owner($subscription_id)) {
+                $doc = new DOMDocument();
+                libxml_use_internal_errors(true); // suppress parsing warnings for malformed HTML
+                $doc->loadHTML($output);
+                libxml_clear_errors();
+
+                $body = $doc->getElementsByTagName('body')->item(0);
+                $new_output = '';
+                foreach ($body->childNodes as $node) {
+                    if ($node->nodeType === XML_ELEMENT_NODE) {
+                        if ($node->nodeName == 'li') {
+                            $firstChildNode = $node->childNodes[0];
+                            $childNodeName = $firstChildNode->nodeName;
+                            if ($childNodeName == 'h4') {
+                                $value = $firstChildNode->nodeValue;
+                                if (strpos('Evergreen API Credentials', $value) !== false) {
+                                    $login_url = (isset($_SERVER['HTTPS']) ? 'https' : 'http').'://'.$_SERVER['HTTP_HOST']."/login-evergreen/{$user_id}/";
+                                    $new_output .= $doc->saveHTML($node);
+                                    $new_output .= '<li class="wppb-form-field"><label>Library Login URL</label>';
+                                    $new_output .= "<p style='margin: 0 0 0 .5rem'>{$login_url}</p>";
+                                    $new_output .= '</li>';
+                                    continue;
+                                }
+                            }
+                        }
+                        $new_output .= $doc->saveHTML($node);
+                    }
+                }
+                return $new_output;
+            } else {
+                // RESERVED: gs_child can be handled here.
+            }
+        }
+        
+        return $output;
     }
     
     public function gs_evergreen_login($atts) {
