@@ -14,6 +14,13 @@ define( 'GS_LEA_EVERGREEN_PORT', 6001 );
 define( 'GS_LEA_EXPIRY_HOUR', 1 );
 define( 'GS_LEA_INACTIVE_ACCOUNT_HOURS', 24 );
 
+const GS_LEA_SIP2_RES_CODE = array(
+    1 => 'Success!',
+    2 => 'You are using a bad card.',
+    3 => 'The registered SIP2 auth information seems incorrect.',
+    4 => 'Sorry, GrantSelect fails to connect to SIP2 server. Please try again later.'
+);
+
 register_activation_hook(__FILE__, 'gs_lea_install');
 register_deactivation_hook( __FILE__, 'gs_lea_uninstall');
 
@@ -176,6 +183,36 @@ Class Grantselect_Library_Evergreen_Auth {
             return "<p>Please select the proper library ID.</p>";
         }
 
+        if (isset($_SESSION['sip2_response'])) {
+            $sip2_code = $_SESSION['sip2_response'];
+            unset($_SESSION['sip2_response']);
+
+            if ($sip2_code > 1) {
+                $error_msg = GS_LEA_SIP2_RES_CODE[$sip2_code];
+                return "<p>{$error_msg}</p>";
+            }
+
+            $where = [
+                'library_number'    => $library_number,
+                'card_number'       => $_SESSION['sip2_card']
+            ];
+            $wpdb->delete($this->table_library_cards, $where, ['%d', '%s']);
+
+            $row = $where;
+            $row['expired_at'] = time() + GS_LEA_EXPIRY_HOUR * 86400;
+            $wpdb->insert(
+                $this->table_library_cards,
+                $row
+            );
+
+            // // add the login library log
+            $this->add_library_login_log($library_number);     // Log 'login' entry
+
+            $_SESSION['sip2_auth'] = '1';
+            wp_redirect(home_url('/access/'));
+            exit;
+        }
+
         $member = pms_get_member($library_number);   // $library_number is equal to $user_id here
         $active_status = false;
         foreach ($member->subscriptions as $subscript) {
@@ -195,68 +232,38 @@ Class Grantselect_Library_Evergreen_Auth {
             return "<p>This library does not contain Evergreen information.</p>";
         }
 
-        $card_number = isset($_POST['libcardnum']) ? sanitize_text_field($_POST['libcardnum']) : '';
+        $card_number = isset($_POST['card_number']) ? sanitize_text_field($_POST['card_number']) : '';
         if (!empty($card_number)) {
             if (
-                isset($_SESSION['card_number']) &&
-                ($_SESSION['card_number'] == $card_number) &&
-                isset($_SESSION['library_number']) &&
-                ($_SESSION['library_number'] == $library_number)
+                isset($_SESSION['sip2_auth']) &&
+                ($_SESSION['sip2_auth'] == 1) &&
+                isset($_SESSION['sip2_card']) &&
+                ($_SESSION['sip2_card'] == $card_number) &&
+                isset($_SESSION['sip2_lib']) &&
+                ($_SESSION['sip2_lib'] == $library_number)
             ) {
                 $time_now = time();
                 $query = "select * from {$this->table_library_cards} where library_number={$library_number} AND card_number={$card_number} AND expired_at > {$time_now}";
                 $card_rows = $wpdb->get_results($query);
                 if (count($card_rows) > 0) {
-                    $_SESSION['library_user_action'] = 'access';
                     wp_redirect(home_url("/access/"));
                     exit;
                 }
             }
 
-            $_SESSION['temp_card_number'] = $card_number;
-            $_SESSION['temp_library_number'] = $library_number;
+            $sip2_credentials = [];
+            foreach ($sip2_rows as $sip2r) {
+                $sip2_credentials[$sip2r->meta_key] = $sip2r->meta_value;
+            }
 
-            wp_redirect(home_url("/SIP2test/SIP2test.php"));
+            $_SESSION['sip2_host'] = $sip2_credentials['evergreen-sip2-domain'];
+            $_SESSION['sip2_user'] = $sip2_credentials['evergreen-sip2-username'];
+            $_SESSION['sip2_pass'] = $sip2_credentials['evergreen-sip2-password'];
+            $_SESSION['sip2_card'] = $card_number;
+            $_SESSION['sip2_lib'] = $library_number;
+
+            header("Location: https://www.grantselect.com/SIP2test/SIP2test.php");
             exit;
-
-            // $sip2_credentials = [];
-            // foreach ($sip2_rows as $sip2r) {
-            //     $sip2_credentials[$sip2r->meta_key] = $sip2r->meta_value;
-            // }
-
-            // $result = $this->validate_sip2_card(
-            //     $card_number,
-            //     $sip2_credentials['evergreen-sip2-domain'],
-            //     GS_LEA_EVERGREEN_PORT,
-            //     $sip2_credentials['evergreen-sip2-username'],
-            //     $sip2_credentials['evergreen-sip2-password']
-            // );
-
-            // if (!empty($result['error'])) {
-            //     return "<p>{$result['error']}</p>";
-            // }
-
-            // $where = [
-            //     'library_number'    => $library_number,
-            //     'card_number'       => $card_number
-            // ];
-            // $wpdb->delete($this->table_library_cards, $where, ['%d', '%s']);
-
-            // $row = $where;
-            // $row['expired_at'] = time() + GS_LEA_EXPIRY_HOUR * 86400;
-            // $wpdb->insert(
-            //     $this->table_library_cards,
-            //     $row
-            // );
-
-            // // add the login library log
-            // $this->add_library_login_log($library_number);
-
-            // $_SESSION['library_number']     = $library_number;
-            // $_SESSION['card_number']        = $card_number;
-
-            // wp_redirect(home_url("/access/"));
-            // exit;
         }
 
         ob_start();
@@ -267,42 +274,6 @@ Class Grantselect_Library_Evergreen_Auth {
         ob_end_clean();
 
         return $content;
-    }
-
-    public function validate_sip2_card($card_number, $sip_host, $sip_port, $login_user = '', $login_pass = '') {
-        $socket = fsockopen($sip_host, $sip_port, $errno, $errstr, 10);
-        if (!$socket) {
-            return ['error' => "Connection to Evergreen domain failed."];
-        }
-
-        // Example login message (9300 = login message, CN=login user, CO=login password)
-        $login_msg = "9300CN{$login_user}|CO{$login_pass}|\r";
-        fwrite($socket, $login_msg);
-        $login_response = fgets($socket); // Read login response
-
-        if ($login_response == 941) {   // 941 response is a successful login to the SIP2 server
-
-            // Create Patron Status message (23)
-            // Format: 23<language><transaction date>AO<login username>|AA<patron identifier>|AC<terminal password>|
-            $transaction_date = date('Ymd    His');  // the 4 spaces between "Ymd" and "His" are important
-            $msg = "23000" . $transaction_date . "AO{$login_user}|AA{$card_number}|AC{$login_pass}|\r";
-
-            fwrite($socket, $msg);
-            $card_valid_response = fgets($socket);
-            fclose($socket);
-        } else {
-            fclose($socket);
-            return ['error' => 'Login username or password is incorrect.'];
-        }
-
-
-        // SIP2 response starts with 24 if successful Patron Status response
-        if (strpos($card_valid_response, '|BLY|') !== false) {
-            // "|BLY|" in the response indicates that the card number matches an existing card number
-            return ['error' => null];
-        }
-
-        return ['error' => 'You are using a bad card.'];
     }
 
     public function add_library_login_log($library_number) {

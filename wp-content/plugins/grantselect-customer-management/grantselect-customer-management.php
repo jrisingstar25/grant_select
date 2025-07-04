@@ -1716,18 +1716,19 @@ EOF;
                         $_SESSION['referer_url'] = $referer_url;
                     } else {
                         // check if card session exists
-                        if (isset($_SESSION['library_number']) && isset($_SESSION['card_number'])) {
+                        if (isset($_SESSION['sip2_auth']) && isset($_SESSION['sip2_lib']) && isset($_SESSION['sip2_card'])) {
                             // check if library_number/card_number was expired
-                            $library_number     = $_SESSION['library_number'];
-                            $card_number        = $_SESSION['card_number'];
+                            $library_number     = $_SESSION['sip2_lib'];
+                            $card_number        = $_SESSION['sip2_card'];
                             $time_now           = time();
 
                             $query = "select * from {$this->table_library_cards} where library_number={$library_number} AND card_number={$card_number} AND expired_at > {$time_now}";
                             $card_rows = $wpdb->get_results($query);
                             if (count($card_rows) == 0) {
                                 // unset card sessions
-                                unset($_SESSION['library_number']);
-                                unset($_SESSION['card_number']);
+                                unset($_SESSION['sip2_auth']);
+                                unset($_SESSION['sip2_lib']);
+                                unset($_SESSION['sip2_card']);
 
                                 // redirect to log-evergreen url
                                 wp_redirect(home_url("/login-evergreen/{$library_number}"));
@@ -1865,9 +1866,9 @@ EOF;
                     if ($url_row){
                         $user_id = $url_row->user_id;
                     } else {
-                        if (isset($_SESSION['library_number']) && isset($_SESSION['card_number'])) {
-                            $library_number     = $_SESSION['library_number'];
-                            $card_number        = $_SESSION['card_number'];
+                        if (isset($_SESSION['sip2_auth']) && isset($_SESSION['sip2_lib']) && isset($_SESSION['sip2_card'])) {
+                            $library_number     = $_SESSION['sip2_lib'];
+                            $card_number        = $_SESSION['sip2_card'];
                             $time_now           = time();
 
                             $query = "select * from {$this->table_library_cards} where library_number={$library_number} AND card_number={$card_number} AND expired_at > {$time_now}";
