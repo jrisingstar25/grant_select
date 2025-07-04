@@ -213,44 +213,50 @@ Class Grantselect_Library_Evergreen_Auth {
                 }
             }
 
-            $sip2_credentials = [];
-            foreach ($sip2_rows as $sip2r) {
-                $sip2_credentials[$sip2r->meta_key] = $sip2r->meta_value;
-            }
+            $_SESSION['temp_card_number'] = $card_number;
+            $_SESSION['temp_library_number'] = $library_number;
 
-            $result = $this->validate_sip2_card(
-                $card_number,
-                $sip2_credentials['evergreen-sip2-domain'],
-                GS_LEA_EVERGREEN_PORT,
-                $sip2_credentials['evergreen-sip2-username'],
-                $sip2_credentials['evergreen-sip2-password']
-            );
-
-            if (!empty($result['error'])) {
-                return "<p>{$result['error']}</p>";
-            }
-
-            $where = [
-                'library_number'    => $library_number,
-                'card_number'       => $card_number
-            ];
-            $wpdb->delete($this->table_library_cards, $where, ['%d', '%s']);
-
-            $row = $where;
-            $row['expired_at'] = time() + GS_LEA_EXPIRY_HOUR * 86400;
-            $wpdb->insert(
-                $this->table_library_cards,
-                $row
-            );
-
-            // add the login library log
-            $this->add_library_login_log($library_number);
-
-            $_SESSION['library_number']     = $library_number;
-            $_SESSION['card_number']        = $card_number;
-
-            wp_redirect(home_url("/access/"));
+            wp_redirect(home_url("/SIP2test/SIP2test.php"));
             exit;
+
+            // $sip2_credentials = [];
+            // foreach ($sip2_rows as $sip2r) {
+            //     $sip2_credentials[$sip2r->meta_key] = $sip2r->meta_value;
+            // }
+
+            // $result = $this->validate_sip2_card(
+            //     $card_number,
+            //     $sip2_credentials['evergreen-sip2-domain'],
+            //     GS_LEA_EVERGREEN_PORT,
+            //     $sip2_credentials['evergreen-sip2-username'],
+            //     $sip2_credentials['evergreen-sip2-password']
+            // );
+
+            // if (!empty($result['error'])) {
+            //     return "<p>{$result['error']}</p>";
+            // }
+
+            // $where = [
+            //     'library_number'    => $library_number,
+            //     'card_number'       => $card_number
+            // ];
+            // $wpdb->delete($this->table_library_cards, $where, ['%d', '%s']);
+
+            // $row = $where;
+            // $row['expired_at'] = time() + GS_LEA_EXPIRY_HOUR * 86400;
+            // $wpdb->insert(
+            //     $this->table_library_cards,
+            //     $row
+            // );
+
+            // // add the login library log
+            // $this->add_library_login_log($library_number);
+
+            // $_SESSION['library_number']     = $library_number;
+            // $_SESSION['card_number']        = $card_number;
+
+            // wp_redirect(home_url("/access/"));
+            // exit;
         }
 
         ob_start();
