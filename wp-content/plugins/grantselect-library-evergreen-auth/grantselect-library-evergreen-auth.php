@@ -262,7 +262,8 @@ Class Grantselect_Library_Evergreen_Auth {
             $_SESSION['sip2_card'] = $card_number;
             $_SESSION['sip2_lib'] = $library_number;
 
-            header("Location: https://www.grantselect.com/SIP2test/SIP2test.php");
+            $sip2_auth_url = (isset($_SERVER['HTTPS']) ? 'https' : 'http').'://'.$_SERVER['HTTP_HOST']."/sip2connect.php";
+            header("Location: {$sip2_auth_url}");
             exit;
         }
 
