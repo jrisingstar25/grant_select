@@ -99,6 +99,8 @@ Class Grantselect_Library_Evergreen_Auth {
     private function init() {
         add_shortcode("gs-evergreen-login", array($this, "gs_evergreen_login"));
         add_filter( 'wppb_output_fields_filter', array($this, 'add_library_login_url'), 10, 1 );
+        add_action('wp_enqueue_scripts', array($this, 'user_notice_message_enqueue_scripts'));
+
     }
 
     public function add_library_login_url($output) {
@@ -400,6 +402,16 @@ Class Grantselect_Library_Evergreen_Auth {
             $ip = $_SERVER['REMOTE_ADDR'];
         }
         return $ip;
+    }
+
+    function user_notice_message_enqueue_scripts() {
+        wp_enqueue_script(
+            'user_notice_message',
+            plugin_dir_url(__FILE__) . 'js/message_render.js',
+            array(),
+            false,
+            true
+        );
     }
 }
 
