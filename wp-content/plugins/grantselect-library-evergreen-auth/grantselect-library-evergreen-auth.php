@@ -13,12 +13,13 @@ define( 'GS_LEA_PLUGIN_DIR_URL', plugin_dir_url( __FILE__ ) );
 define( 'GS_LEA_EVERGREEN_PORT', 6001 );
 define( 'GS_LEA_EXPIRY_HOUR', 1 );
 define( 'GS_LEA_INACTIVE_ACCOUNT_HOURS', 24 );
+define( 'GS_LEA_CURRENT_URL', (isset($_SERVER['HTTPS']) ? 'https' : 'http').'://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
 
 const GS_LEA_SIP2_RES_CODE = array(
     1 => 'Success!',
-    2 => 'You are using a bad card.',
+    2 => 'Sorry, your card number is invalid. <a href="'.GS_LEA_CURRENT_URL.'">Please try again',
     3 => 'The registered SIP2 auth information seems incorrect.',
-    4 => 'Sorry, GrantSelect fails to connect to SIP2 server. Please try again later.'
+    4 => 'Sorry, GrantSelect failed to connect to SIP2 server. Please try again later.'
 );
 
 register_activation_hook(__FILE__, 'gs_lea_install');
