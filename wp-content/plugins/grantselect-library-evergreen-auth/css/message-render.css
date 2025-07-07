@@ -1,0 +1,17 @@
+.user-notice {
+    display: none;
+}
+.user-notice span {
+    vertical-align: middle;
+}
+.user-notice::before {
+    display: inline-block;
+    content: '';
+    width: 24px;
+    height: 24px;
+    margin-right: 8px;
+    vertical-align: middle;
+    background: url('../images/loading.gif') no-repeat center center;
+    background-size: cover;
+}
+

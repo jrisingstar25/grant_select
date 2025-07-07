@@ -3,8 +3,8 @@
           <label for="user_cardnum">Enter Your Library Card Number</label>
           <input type="text" name="card_number" id="card_number" class="input" value="" size="20" />
      </p>
-     <p class="user_notice" id="user_notice" style="display:none">
-          Authenticating your library card number...
+     <p class="user-notice" id="user_notice">
+          <span>Authenticating your library card number...</span>
      </p>
      <p>
           <input type="submit" value="Log In" />

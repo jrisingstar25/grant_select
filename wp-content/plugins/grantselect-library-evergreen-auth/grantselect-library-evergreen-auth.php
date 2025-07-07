@@ -100,7 +100,7 @@ Class Grantselect_Library_Evergreen_Auth {
         add_shortcode("gs-evergreen-login", array($this, "gs_evergreen_login"));
         add_filter( 'wppb_output_fields_filter', array($this, 'add_library_login_url'), 10, 1 );
         add_action('wp_enqueue_scripts', array($this, 'user_notice_message_enqueue_scripts'));
-
+        wp_enqueue_style('gs_admin_fe_css', GS_LEA_PLUGIN_DIR_URL . '/css/message-render.css');
     }
 
     public function add_library_login_url($output) {
