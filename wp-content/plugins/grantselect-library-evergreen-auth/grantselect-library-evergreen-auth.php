@@ -147,7 +147,7 @@ Class Grantselect_Library_Evergreen_Auth {
                             $childNodeName = $firstChildNode->nodeName;
                             if ($childNodeName == 'h4') {
                                 $value = $firstChildNode->nodeValue;
-                                if (strpos('Evergreen API Credentials', $value) !== false) {
+                                if (strpos($value, 'Evergreen API Credentials') !== false) {
                                     $login_url = (isset($_SERVER['HTTPS']) ? 'https' : 'http').'://'.$_SERVER['HTTP_HOST']."/login-evergreen/{$user_id}/";
                                     $new_output .= $doc->saveHTML($node);
                                     $new_output .= '<li class="wppb-form-field"><label>Library Login URL</label>';
@@ -176,7 +176,7 @@ Class Grantselect_Library_Evergreen_Auth {
             session_start();
         }
 
-        if (is_user_logged_in()) {
+        if (is_user_logged_in() && strpos($_SERVER['REQUEST_URI'], '/wp-admin') === false) {
             wp_redirect(home_url("/access/"));
             exit;
         }
